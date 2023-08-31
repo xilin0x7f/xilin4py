@@ -1,3 +1,4 @@
+# Author: 赩林, xilin0x7f@163.com
 import numpy as np
 
 def f_score(x, y):
