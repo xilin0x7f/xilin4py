@@ -32,11 +32,11 @@ class NestedCrossValidationEvaluator:
         if hasattr(self.pipeline_out, "predict_proba"):
             self.y_prob = []
         for i, (out_train_index, out_test_index) in enumerate(cv_out_strategy.split(self.x, self.y)):
-            x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
+            x_out_train, x_out_test = self.x[out_train_index, :], self.x[out_test_index, :]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.transform_by_out:
                 pipeline_out_transform = base.clone(self.pipeline_out[self.transform_range])
-                pipeline_out_transform.fit(x_out_train, y_out_test)
+                pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
                 best_param = self.grid_search(x_out_train_transformed, y_out_train)
             else:
