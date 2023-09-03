@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='xilin4py',
-    version='0.1',
+    version='0.11',
     description='A sample Python package',
     author='xilin0x7f',
     author_email='xilin0x7f@163.com',
