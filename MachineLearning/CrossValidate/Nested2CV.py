@@ -23,7 +23,8 @@ class NestedCrossValidationEvaluator:
         self.search_params = ParameterGrid(search_params)
         self.scoring = scoring
 
-    def run(self):
+    def run(self, print_scores=False):
+        self.print_scores = print_scores
         cv_out_strategy = check_cv(self.cv_out)  # Ensure cv is a valid CV splitter
         self.best_params = []
         self.pipeline_out_fitted = []
@@ -32,7 +33,7 @@ class NestedCrossValidationEvaluator:
         if hasattr(self.pipeline_out, "predict_proba"):
             self.y_prob = []
         for i, (out_train_index, out_test_index) in enumerate(cv_out_strategy.split(self.x, self.y)):
-            x_out_train, x_out_test = self.x[out_train_index, :], self.x[out_test_index, :]
+            x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.transform_by_out:
                 pipeline_out_transform = base.clone(self.pipeline_out[self.transform_range])
@@ -55,8 +56,8 @@ class NestedCrossValidationEvaluator:
 
         if hasattr(self.pipeline_out, "predict_proba"):
             self.y_prob = np.vstack(self.y_prob)
-        self.y_pred = np.hstack(self.y_pred)
-        self.y_true = np.hstack(self.y_true)
+        self.y_pred = np.concatenate(self.y_pred)
+        self.y_true = np.concatenate(self.y_true)
 
     def grid_search(self, x, y):
         search_params = self.search_params
@@ -65,7 +66,7 @@ class NestedCrossValidationEvaluator:
         for i, search_param in enumerate(search_params):
             pipeline_current = base.clone(pipeline)
             pipeline_current.set_params(**search_param)
-            CV = CrossValidationEvaluator(x, y, pipeline, self.cv_in)
+            CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in)
             CV.run()
             y_pred = CV.y_pred
             y_true = CV.y_true
@@ -77,7 +78,11 @@ class NestedCrossValidationEvaluator:
             elif isinstance(self.scoring, str):
                 if self.scoring == "accuracy":
                     scores.append(metrics.accuracy_score(y_true, y_pred))
+                elif self.scoring == "auc":
+                    scores.append(metrics.roc_auc_score(y_true, y_prob[:, -1]))
 
+        if self.print_scores:
+            print(scores)
         best_param = search_params[int(np.argmax(scores))]
         return best_param
 

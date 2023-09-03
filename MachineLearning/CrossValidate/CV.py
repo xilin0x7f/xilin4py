@@ -38,21 +38,21 @@ class CrossValidationEvaluator:
         for i, (train_index, test_index) in enumerate(cv_strategy.split(self.x, self.y)):
             self.train_index_.append(train_index)
             self.test_index_.append(test_index)
-            X_train, X_test = self.x[train_index], self.x[test_index]
+            x_train, x_test = self.x[train_index], self.x[test_index]
             y_train, y_test = self.y[train_index], self.y[test_index]
             pipeline = base.clone(self.pipeline)
-            pipeline.fit(X_train, y_train)
+            pipeline.fit(x_train, y_train)
             self.pipeline_fitted.append(pipeline)
-            y_pred = pipeline.predict(X_test)
+            y_pred = pipeline.predict(x_test)
             self.y_pred.append(y_pred)
             self.y_true.append(y_test)
             if hasattr(pipeline, "predict_proba"):
-                self.y_prob.append(pipeline.predict_proba(X_test))
+                self.y_prob.append(pipeline.predict_proba(x_test))
 
         if hasattr(self.pipeline, "predict_proba"):
             self.y_prob = np.vstack(self.y_prob)
-        self.y_pred = np.hstack(self.y_pred)
-        self.y_true = np.hstack(self.y_true)
+        self.y_pred = np.concatenate(self.y_pred)
+        self.y_true = np.concatenate(self.y_true)
 
 # if __name__ == "__main__":
 #     x = np.random.rand(100, 10)
