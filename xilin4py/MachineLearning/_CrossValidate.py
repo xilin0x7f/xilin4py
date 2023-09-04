@@ -3,11 +3,44 @@ import numpy as np
 from sklearn.model_selection import check_cv
 from sklearn import base
 from sklearn import metrics
-from sklearn.svm import SVC, SVR
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import KFold, ParameterGrid
-from sklearn import preprocessing
-from .CV import CrossValidationEvaluator
+from sklearn.model_selection import ParameterGrid
+
+class CrossValidationEvaluator:
+    def __init__(self, x, y, pipeline, cv):
+        self.x = x
+        self.y = y
+        self.pipeline = pipeline
+        self.cv = cv
+        self.pipeline_fitted = []
+
+    def run(self):
+        self.train_index_ = []
+        self.test_index_ = []
+        self.y_true = []
+        self.y_pred = []
+        if hasattr(self.pipeline, "predict_proba"):
+            self.y_prob = []
+
+        cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
+        for i, (train_index, test_index) in enumerate(cv_strategy.split(self.x, self.y)):
+            self.train_index_.append(train_index)
+            self.test_index_.append(test_index)
+            x_train, x_test = self.x[train_index], self.x[test_index]
+            y_train, y_test = self.y[train_index], self.y[test_index]
+            pipeline = base.clone(self.pipeline)
+            pipeline.fit(x_train, y_train)
+            self.pipeline_fitted.append(pipeline)
+            y_pred = pipeline.predict(x_test)
+            self.y_pred.append(y_pred)
+            self.y_true.append(y_test)
+            if hasattr(pipeline, "predict_proba"):
+                self.y_prob.append(pipeline.predict_proba(x_test))
+
+        if hasattr(self.pipeline, "predict_proba"):
+            self.y_prob = np.vstack(self.y_prob)
+        self.y_pred = np.concatenate(self.y_pred)
+        self.y_true = np.concatenate(self.y_true)
+
 
 class NestedCrossValidationEvaluator:
     def __init__(self, x, y, pipeline_out, pipeline_in, cv_out, cv_in, transform_by_out, transform_range, search_params,
@@ -85,22 +118,3 @@ class NestedCrossValidationEvaluator:
             print(scores)
         best_param = search_params[int(np.argmax(scores))]
         return best_param
-
-
-if __name__ == "__main__":
-    x = np.random.rand(100, 10)
-    y = np.random.choice([0, 1], size=100)
-    model = SVC(probability=True)
-    pipeline_out = Pipeline([("scaler", preprocessing.StandardScaler()),
-                             ("model", model)])
-    pipeline_in = Pipeline([("model", model)])
-
-    cv = KFold(5, shuffle=True, random_state=0)
-    cv_evaluator = NestedCrossValidationEvaluator(x, y, pipeline_out, pipeline_in, cv, cv, True, slice(0, 1), {"model__C": [0.1, 0.2, 0.3]})
-    cv_evaluator.run()
-    print(cv_evaluator.pipeline_out_fitted[0])
-    print(id(cv_evaluator.pipeline_out_fitted[0]))
-    print(id(cv_evaluator.pipeline_out_fitted[1]))
-    print(cv_evaluator.best_params)
-    print(cv_evaluator.y_prob)
-    print(cv_evaluator.y_pred)
