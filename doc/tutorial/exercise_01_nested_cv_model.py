@@ -38,15 +38,9 @@ n_peru_start = 0
 
 
 def worker(task):
-    data_path, model_name, idx, pipeline_out, pipeline_in, search_params = task
-    data = pd.read_excel(data_path)
-    x = data.iloc[:, :-1]
-    y = data.iloc[:, -1]
-    x, y = np.array(x), np.array(y)
-    y = copy.deepcopy(y)
-    random.shuffle(y)
-    cv_evaluator = NestedCrossValidationEvaluator(x, y, pipeline_out, pipeline_in, cv_out, cv_in, True, slice(0, 2),
-                                                  search_params)
+    idx, cv_evaluator = task
+    cv_evaluator = copy.deepcopy(cv_evaluator)
+    random.shuffle(cv_evaluator.y)
     cv_evaluator.run()
     np.savetxt(os.path.join(results_dir, f"pred_{model_name}_{idx:05}.txt"),
                np.column_stack([cv_evaluator.y_true, cv_evaluator.y_pred, cv_evaluator.y_prob]))
@@ -80,7 +74,7 @@ if __name__ == "__main__":
             current_run_start = n_peru_start + run_counter * process_per_run
             current_run_end = min(n_peru_start + (run_counter + 1) * process_per_run, n_peru)
             tasks = (
-                (data_path, model_name, idx, pipeline_out, pipeline_in, search_params)
+                (idx, cv_evaluator)
                 for idx in range(current_run_start, current_run_end)
             )
             # 并行化处理
