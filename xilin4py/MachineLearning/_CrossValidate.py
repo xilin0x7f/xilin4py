@@ -1,5 +1,6 @@
 # Author: 赩林, xilin0x7f@163.com
 import numpy as np
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import check_cv
 from sklearn import base
 from sklearn import metrics
@@ -69,7 +70,10 @@ class NestedCrossValidationEvaluator:
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.transform_by_out:
-                pipeline_out_transform = base.clone(self.pipeline_out[self.transform_range])
+                if isinstance(self.transform_range, slice):
+                    pipeline_out_transform = base.clone(self.pipeline_out[self.transform_range])
+                else:
+                    pipeline_out_transform = Pipeline([self.pipeline_out.steps[i] for i in self.transform_range])
                 pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
                 best_param = self.grid_search(x_out_train_transformed, y_out_train)
