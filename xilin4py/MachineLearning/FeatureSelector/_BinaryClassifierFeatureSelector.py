@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from scipy.stats import ttest_ind, chi2_contingency
-from sklearn.linear_model import LassoCV
+from sklearn.linear_model import LassoCV, LogisticRegressionCV
 from xilin4py.Radiomics import icc_compute
 
 def f_score(x, y):
@@ -56,8 +56,13 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
         while max(correlation_list) > self.threshold_correlation:
             correlated_pairs = [pair for pair, corr_value in zip(column_pair_list, correlation_list) if corr_value > self.threshold_correlation]
             p_values_of_correlated = [(p_values[pair[0]], pair[0]) for pair in correlated_pairs] + [(p_values[pair[1]], pair[1]) for pair in correlated_pairs]
-            column_to_remove = max(p_values_of_correlated, key=lambda x: x[0])[1]
-            selected_columns = selected_columns[selected_columns != column_to_remove]
+            column_to_remove_index = max(p_values_of_correlated, key=lambda x: x[0])[1]
+            column_to_remove = selected_columns[column_to_remove_index]
+
+            # Convert selected_columns to a list, remove the column, and convert it back to an Index
+            selected_columns_list = selected_columns.tolist()
+            selected_columns_list.remove(column_to_remove)
+            selected_columns = pd.Index(selected_columns_list)
 
             df_selected = df[selected_columns]
             correlation_matrix = df_selected.corr().abs()
@@ -75,14 +80,16 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
 
 
 class LassoFeatureSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, cv=5, alpha=1.0):
+    def __init__(self, cv=5, Cs=10, random_state=None):
         self.cv = cv
-        self.alpha = alpha
+        self.Cs = Cs  # Cs describes the inverse of regularization strength
+        self.random_state = random_state
 
     def fit(self, x, y):
-        self.lasso = LassoCV(cv=self.cv, alpha=self.alpha)
-        self.lasso.fit(x, y)
-        self.selected_features_ = np.nonzero(self.lasso.coef_)[0]
+        self.log_reg = LogisticRegressionCV(
+            cv=self.cv, penalty='l1', solver='liblinear', Cs=self.Cs, random_state=self.random_state)
+        self.log_reg.fit(x, y)
+        self.selected_features_ = np.nonzero(self.log_reg.coef_[0])[0]
         return self
 
     def transform(self, x, y=None):
