@@ -71,9 +71,9 @@ class NestedCrossValidationEvaluator:
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.transform_by_out:
                 if isinstance(self.transform_range, slice):
-                    pipeline_out_transform = base.clone(self.pipeline_out[self.transform_range])
-                else:
-                    pipeline_out_transform = Pipeline([self.pipeline_out.steps[i] for i in self.transform_range])
+                    self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
+
+                pipeline_out_transform = Pipeline([self.pipeline_out.steps[i] for i in self.transform_range])
                 pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
                 best_param = self.grid_search(x_out_train_transformed, y_out_train)
@@ -85,6 +85,49 @@ class NestedCrossValidationEvaluator:
             pipeline_out.set_params(**best_param)
             pipeline_out.fit(x_out_train, y_out_train)
             self.pipeline_out_fitted.append(pipeline_out)
+            y_pred = pipeline_out.predict(x_out_test)
+            self.y_pred.append(y_pred)
+            self.y_true.append(y_out_test)
+            if hasattr(pipeline_out, "predict_proba"):
+                self.y_prob.append(pipeline_out.predict_proba(x_out_test))
+
+        if hasattr(self.pipeline_out, "predict_proba"):
+            self.y_prob = np.vstack(self.y_prob)
+        self.y_pred = np.concatenate(self.y_pred)
+        self.y_true = np.concatenate(self.y_true)
+
+    def run_use_fitted(self, print_scores=False, out_range=None):
+        self.pipeline_out = Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in out_range])
+        self.print_scores = print_scores
+        cv_out_strategy = check_cv(self.cv_out)  # Ensure cv is a valid CV splitter
+        self.best_params = []
+        self.pipeline_out_fitted = []
+        self.y_pred = []
+        self.y_true = []
+        if hasattr(self.pipeline_out, "predict_proba"):
+            self.y_prob = []
+        for i, (out_train_index, out_test_index) in enumerate(cv_out_strategy.split(self.x, self.y)):
+            x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
+            y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
+            fitted_pipeline_for_transform = Pipeline([self.pipeline_out_fitted[i].steps[j] for j in out_range])
+            x_out_train, y_out_train = fitted_pipeline_for_transform.transform(x_out_train, y_out_train)
+            x_out_test, y_out_test = fitted_pipeline_for_transform.transform(x_out_test, y_out_test)
+            if self.transform_by_out:
+                if isinstance(self.transform_range, slice):
+                    self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
+
+                pipeline_out_transform = Pipeline([self.pipeline_out.steps[i] for i in self.transform_range])
+                pipeline_out_transform.fit(x_out_train, y_out_train)
+                x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
+                best_param = self.grid_search(x_out_train_transformed, y_out_train)
+            else:
+                best_param = self.grid_search(x_out_train, y_out_train)
+            self.best_params.append(best_param)
+
+            pipeline_out = base.clone(self.pipeline_out)
+            pipeline_out.set_params(**best_param)
+            pipeline_out.fit(x_out_train, y_out_train)
+            self.pipeline_out_fitted.append(Pipeline(fitted_pipeline_for_transform.steps + self.pipeline_out.steps))
             y_pred = pipeline_out.predict(x_out_test)
             self.y_pred.append(y_pred)
             self.y_true.append(y_out_test)
