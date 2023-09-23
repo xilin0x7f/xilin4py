@@ -3,6 +3,8 @@ import pandas as pd
 import pingouin as pg
 import numpy as np
 from joblib import Parallel, delayed
+import warnings
+warnings.filterwarnings("ignore")
 
 def icc_compute(data1, data2, icc_index=1):
     # 单个rater, 在不同时间进行评分，然后计算ICC时选用下面的方式 icc_index=1

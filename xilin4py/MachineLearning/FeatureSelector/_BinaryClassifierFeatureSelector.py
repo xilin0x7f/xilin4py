@@ -6,7 +6,7 @@ from scipy.stats import ttest_ind, chi2_contingency
 from sklearn.linear_model import LassoCV, LogisticRegressionCV
 from xilin4py.Radiomics import icc_compute_optimized
 
-def f_score(x, y):
+def f_score_old(x, y):
     scores = []
     # F score
     for col in x.T:
@@ -19,6 +19,28 @@ def f_score(x, y):
                         np.sum(np.power(data_neg[:, 0] - np.mean(data_neg[:, 0]), 2)) / (len(data_neg) - 1)
                 )
         scores.append(score)
+
+    return scores, 1/np.array(scores)
+
+def f_score(x, y):
+    # Calculate means once to avoid repeated calculations
+    mean_data = np.mean(x, axis=0)
+    data_pos = x[y == 1]
+    data_neg = x[y == 0]
+
+    mean_data_pos = np.mean(data_pos, axis=0)
+    mean_data_neg = np.mean(data_neg, axis=0)
+
+    # Vectorized numerator calculation
+    numerator = (np.square(mean_data_pos - mean_data) + np.square(mean_data_neg - mean_data))
+
+    # Vectorized denominator calculation
+    denominator = (
+            (np.sum(np.square(data_pos - mean_data_pos[:, np.newaxis]), axis=0) / (len(data_pos) - 1)) +
+            (np.sum(np.square(data_neg - mean_data_neg[:, np.newaxis]), axis=0) / (len(data_neg) - 1))
+    )
+
+    scores = numerator / denominator
 
     return scores, 1/np.array(scores)
 
