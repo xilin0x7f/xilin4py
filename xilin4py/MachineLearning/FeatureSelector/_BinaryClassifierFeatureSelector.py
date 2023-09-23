@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from scipy.stats import ttest_ind, chi2_contingency
 from sklearn.linear_model import LassoCV, LogisticRegressionCV
-from xilin4py.Radiomics import icc_compute
+from xilin4py.Radiomics import icc_compute_optimized
 
 def f_score(x, y):
     scores = []
@@ -109,11 +109,7 @@ class FeatureSelectorICC(BaseEstimator, TransformerMixin):
         df1 = pd.DataFrame(data1)
         df2 = pd.DataFrame(data2)
 
-        # Compute correlations
-        correlations = np.abs(df1.corrwith(df2))
-
-        # Find columns in data1 where correlation is above the threshold
-        icc = icc_compute(data1=df1, data2=df2)
+        icc = icc_compute_optimized(data1=df1, data2=df2)
         self.selected_columns_ = icc[icc["icc"] > self.threshold].index
         return self
 
