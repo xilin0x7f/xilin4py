@@ -36,8 +36,8 @@ def f_score(x, y):
 
     # Vectorized denominator calculation
     denominator = (
-            (np.sum(np.square(data_pos - mean_data_pos[:, np.newaxis]), axis=0) / (len(data_pos) - 1)) +
-            (np.sum(np.square(data_neg - mean_data_neg[:, np.newaxis]), axis=0) / (len(data_neg) - 1))
+            (np.sum(np.square(data_pos - mean_data_pos), axis=0) / (len(data_pos) - 1)) +
+            (np.sum(np.square(data_neg - mean_data_neg), axis=0) / (len(data_neg) - 1))
     )
 
     scores = numerator / denominator
@@ -74,6 +74,10 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
         upper_triangle_indices = np.triu_indices_from(correlation_matrix, k=1)
         correlation_list = correlation_matrix.values[upper_triangle_indices]
         column_pair_list = list(zip(*upper_triangle_indices))
+
+        if len(correlation_list) == 0:
+            self.selected_columns_ = selected_columns.astype(int)
+            return self
 
         while max(correlation_list) > self.threshold_correlation:
             correlated_pairs = [pair for pair, corr_value in zip(column_pair_list, correlation_list) if corr_value > self.threshold_correlation]
