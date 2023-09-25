@@ -44,65 +44,67 @@ def f_score(x, y):
 
     return scores, 1/np.array(scores)
 
+
+def compute_p_values(x, y):
+    p_values = np.zeros(x.shape[1])
+
+    # Step 1: T-test or Chi-Squared Test
+    for i in range(x.shape[1]):
+        unique_values = np.unique(x[:, i]).size
+        if unique_values > 5:
+            # Assume y is binary and perform t-test
+            t_stat, p_value = ttest_ind(x[y == 1, i], x[y == 0, i])
+        else:
+            # Chi-Squared Test
+            contingency_table = np.histogram2d(x[:, i], y, bins=(unique_values, 2))[0]
+            chi2_stat, p_value, dof, ex = chi2_contingency(contingency_table)
+        p_values[i] = p_value
+
+    return p_values
+
+def updating_index(old_index_dict, deleted_index):
+    deleted_index = np.sort(deleted_index)
+    if isinstance(deleted_index, np.ndarray):
+        deleted_index = deleted_index.ravel()
+
+    for index in deleted_index:
+        old_index_dict.pop(index)
+
+    new_dict = {i: old_index_dict[key] for i, key in enumerate(sorted(old_index_dict.keys()))}
+
+    return new_dict
+
 class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
     def __init__(self, threshold_p_value=0.05, threshold_correlation=0.9):
         self.threshold_p_value = threshold_p_value
         self.threshold_correlation = threshold_correlation
 
     def fit(self, x, y=None):
-        df = pd.DataFrame(x)
-        p_values = []
+        p_values = compute_p_values(x, y)
+        index_mapping = dict(zip(range(x.shape[1]), range(x.shape[1])))
+        deleted_columns = np.argwhere(p_values >= self.threshold_p_value)
+        index_mapping = updating_index(index_mapping, deleted_columns)
+        x_selected = np.delete(x, deleted_columns, axis=1)
+        while True:
+            correlation_matrix = np.corrcoef(x_selected, rowvar=False)
+            correlation_matrix[np.tril_indices_from(correlation_matrix)] = 0
+            if np.max(np.abs(correlation_matrix)) < self.threshold_correlation:
+                break
 
-        # Step 1: T-test or Chi-Squared Test
-        for column in df.columns:
-            unique_values = df[column].nunique()
-            if unique_values > 5:
-                # Assume y is binary and perform t-test
-                t_stat, p_value = ttest_ind(df[column][y == 1], df[column][y == 0])
+            row, col = np.unravel_index(np.argmax(np.abs(correlation_matrix)), correlation_matrix.shape)
+            if p_values[index_mapping[row]] >= p_values[index_mapping[col]]:
+                deleted_columns = [row]
             else:
-                # Chi-Squared Test
-                contingency_table = pd.crosstab(df[column], y)
-                chi2_stat, p_value, dof, ex = chi2_contingency(contingency_table)
-            p_values.append(p_value)
+                deleted_columns = [col]
 
-        # Select features with p-values below the threshold
-        selected_columns = df.columns[np.array(p_values) < self.threshold_p_value]
+            index_mapping = updating_index(index_mapping, deleted_columns)
+            x_selected = np.delete(x_selected, deleted_columns, axis=1)
 
-        # Step 2: Recursive Correlation Elimination
-        df_selected = df[selected_columns]
-        correlation_matrix = df_selected.corr().abs()
-        upper_triangle_indices = np.triu_indices_from(correlation_matrix, k=1)
-        correlation_list = correlation_matrix.values[upper_triangle_indices]
-        column_pair_list = list(zip(*upper_triangle_indices))
-
-        if len(correlation_list) == 0:
-            self.selected_columns_ = selected_columns.astype(int)
-            return self
-
-        while max(correlation_list) > self.threshold_correlation:
-            correlated_pairs = [pair for pair, corr_value in zip(column_pair_list, correlation_list) if corr_value > self.threshold_correlation]
-            p_values_of_correlated = [(p_values[pair[0]], pair[0]) for pair in correlated_pairs] + [(p_values[pair[1]], pair[1]) for pair in correlated_pairs]
-            column_to_remove_index = max(p_values_of_correlated, key=lambda x: x[0])[1]
-            column_to_remove = selected_columns[column_to_remove_index]
-
-            # Convert selected_columns to a list, remove the column, and convert it back to an Index
-            selected_columns_list = selected_columns.tolist()
-            selected_columns_list.remove(column_to_remove)
-            selected_columns = pd.Index(selected_columns_list)
-
-            df_selected = df[selected_columns]
-            correlation_matrix = df_selected.corr().abs()
-            upper_triangle_indices = np.triu_indices_from(correlation_matrix, k=1)
-            correlation_list = correlation_matrix.values[upper_triangle_indices]
-            column_pair_list = list(zip(*upper_triangle_indices))
-
-        # Store column indices instead of column names
-        self.selected_columns_ = selected_columns.astype(int)
-
+        self.selected_columns_ = list(index_mapping.values())
         return self
 
-    def transform(self, X, y=None):
-        return X[:, self.selected_columns_]
+    def transform(self, x, y=None):
+        return x[:, self.selected_columns_]
 
 
 class LassoFeatureSelector(BaseEstimator, TransformerMixin):
@@ -143,3 +145,38 @@ class FeatureSelectorICC(BaseEstimator, TransformerMixin):
         mid_col = x.shape[1] // 2
         data1 = x[:, :mid_col]
         return data1[:, self.selected_columns_]
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_classification
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import Pipeline
+    from sklearn.metrics import accuracy_score
+
+    # 我们将使用上面定义的 RecursivePCorrFeatureSelector 类
+    # 创建数据
+    X, y = make_classification(n_samples=1000, n_features=20, random_state=42)
+
+    # 分割数据
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # 创建 pipeline
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('feature_selector', RecursivePCorrFeatureSelector(threshold_p_value=1.1)),
+        ('classifier', LogisticRegression())
+    ])
+
+    # 训练 pipeline
+    pipeline.fit(X_train, y_train)
+
+    # 预测
+    y_pred = pipeline.predict(X_test)
+
+    # 计算准确度
+    accuracy = accuracy_score(y_test, y_pred)
+
+    print(f'Accuracy: {accuracy:.2f}')
