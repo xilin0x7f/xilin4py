@@ -56,7 +56,7 @@ def compute_p_values(x, y):
             t_stat, p_value = ttest_ind(x[y == 1, i], x[y == 0, i])
         else:
             # Chi-Squared Test
-            contingency_table = np.histogram2d(x[:, i], y, bins=(unique_values, np.unique(y).size))[0]
+            contingency_table = np.histogram2d(x[:, i], y, bins=(unique_values, np.unique(y).size))[0] + 1
             chi2_stat, p_value, dof, ex = chi2_contingency(contingency_table)
         p_values[i] = p_value
 
