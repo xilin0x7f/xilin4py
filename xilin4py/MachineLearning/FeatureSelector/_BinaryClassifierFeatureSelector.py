@@ -6,6 +6,7 @@ from scipy.stats import ttest_ind, chi2_contingency
 from sklearn.linear_model import LassoCV, LogisticRegressionCV
 from xilin4py.Radiomics import icc_compute_optimized
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+import copy
 
 def f_score_old(x, y):
     scores = []
@@ -117,7 +118,7 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
 
     def get_support(self):
         check_is_fitted(self)
-        return self.support_mask_
+        return copy.deepcopy(self.support_mask_)
 
     def _get_support_mask(self):
         support_mask = np.zeros(self.n_features_in_, dtype=bool)
@@ -149,7 +150,7 @@ class LassoFeatureSelector(BaseEstimator, TransformerMixin):
 
     def get_support(self):
         check_is_fitted(self)
-        return self.support_mask_
+        return copy.deepcopy(self.support_mask_)
 
     def _get_support_mask(self):
         support_mask = np.zeros(self.n_features_in_, dtype=bool)
@@ -186,7 +187,7 @@ class FeatureSelectorICC(BaseEstimator, TransformerMixin):
 
     def get_support(self):
         check_is_fitted(self)
-        return self.support_mask_
+        return copy.deepcopy(self.support_mask_)
 
     def _get_support_mask(self):
         support_mask = np.zeros(self.n_features_in_, dtype=bool)
