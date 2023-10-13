@@ -7,5 +7,6 @@ __all__ = [
     "CrossValidationEvaluator",
     "NestedCrossValidationEvaluator",
     "Metrics",
-    "CustomSplit"
+    "CustomSplit",
+    "get_strong_feature"
 ]
