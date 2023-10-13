@@ -13,12 +13,12 @@ from sklearn import preprocessing
 from xilin4py.MachineLearning.CrossValidate.Nested2CV import NestedCrossValidationEvaluator
 
 if __name__ == "__main__":
-x = np.random.rand(100, 10)
-y = np.random.choice([0, 1], size=100)
-model = SVC(probability=True)
-pipeline_out = Pipeline([("scaler", preprocessing.StandardScaler()),
-("model", model)])
-pipeline_in = Pipeline([("model", model)])
+    x = np.random.rand(100, 10)
+    y = np.random.choice([0, 1], size=100)
+    model = SVC(probability=True)
+    pipeline_out = Pipeline([("scaler", preprocessing.StandardScaler()),
+    ("model", model)])
+    pipeline_in = Pipeline([("model", model)])
 
     cv = KFold(5, shuffle=True, random_state=0)
     cv_evaluator = NestedCrossValidationEvaluator(x, y, pipeline_out, pipeline_in, cv, cv, True, slice(0, 1), {"model__C": [0.1, 0.2, 0.3]})
