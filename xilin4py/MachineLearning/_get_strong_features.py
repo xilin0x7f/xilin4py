@@ -4,12 +4,12 @@ import copy
 import numpy as np
 import pandas as pd
 
-def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name):
+def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name, endswith="_selector"):
     # get strong feature and data, then save
     feature_selection_counts = np.zeros(len(columns), dtype=int)
     feature_coef_sum = np.zeros(len(columns))
     for fitted_pipeline in cv_evaluator.pipeline_out_fitted:
-        selected_steps = [step for name, step in fitted_pipeline.named_steps.items() if name.endswith('_selector')]
+        selected_steps = [step for name, step in fitted_pipeline.named_steps.items() if name.endswith(endswith)]
         feature_mask = None
         for idx, step in enumerate(selected_steps):
             if idx == 0:
