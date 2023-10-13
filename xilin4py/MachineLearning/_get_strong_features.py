@@ -41,3 +41,4 @@ def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name, endswi
     data_strong_feature = pd.DataFrame(data_strong_feature, columns=columns[feature_selection_freq == 1])
     data_strong_feature["label"] = y
     data_strong_feature.to_excel(os.path.join(save_dir, f"DataStrongFeature_{model_name}.xlsx"), index=False)
+    return feature_selection_df
