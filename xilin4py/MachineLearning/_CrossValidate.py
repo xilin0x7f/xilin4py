@@ -7,19 +7,23 @@ from sklearn import metrics
 from sklearn.model_selection import ParameterGrid
 
 class CrossValidationEvaluator:
-    def __init__(self, x, y, pipeline, cv):
+    def __init__(self, x, y, my_pipeline, cv):
         self.x = x
         self.y = y
-        self.pipeline = pipeline
+        self.my_pipeline = my_pipeline
         self.cv = cv
         self.pipeline_fitted = []
+        self.train_index_ = None
+        self.test_index_ = None
+        self.y_prob = None
+        self.y_pred, self.y_true = None, None
 
     def run(self):
         self.train_index_ = []
         self.test_index_ = []
         self.y_true = []
         self.y_pred = []
-        if hasattr(self.pipeline, "predict_proba"):
+        if hasattr(self.my_pipeline, "predict_proba"):
             self.y_prob = []
 
         cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
@@ -28,16 +32,16 @@ class CrossValidationEvaluator:
             self.test_index_.append(test_index)
             x_train, x_test = self.x[train_index], self.x[test_index]
             y_train, y_test = self.y[train_index], self.y[test_index]
-            pipeline = base.clone(self.pipeline)
-            pipeline.fit(x_train, y_train)
-            self.pipeline_fitted.append(pipeline)
-            y_pred = pipeline.predict(x_test)
+            my_pipeline = base.clone(self.my_pipeline)
+            my_pipeline.fit(x_train, y_train)
+            self.pipeline_fitted.append(my_pipeline)
+            y_pred = my_pipeline.predict(x_test)
             self.y_pred.append(y_pred)
             self.y_true.append(y_test)
-            if hasattr(pipeline, "predict_proba"):
-                self.y_prob.append(pipeline.predict_proba(x_test))
+            if hasattr(my_pipeline, "predict_proba"):
+                self.y_prob.append(my_pipeline.predict_proba(x_test))
 
-        if hasattr(self.pipeline, "predict_proba"):
+        if hasattr(self.my_pipeline, "predict_proba"):
             self.y_prob = np.vstack(self.y_prob)
         self.y_pred = np.concatenate(self.y_pred)
         self.y_true = np.concatenate(self.y_true)
@@ -56,6 +60,10 @@ class NestedCrossValidationEvaluator:
         self.transform_range = transform_range
         self.search_params = ParameterGrid(search_params)
         self.scoring = scoring
+        self.print_scores = None
+        self.best_params = None
+        self.pipeline_out_fitted = None
+        self.y_prob, self.y_true, self.y_pred = None, None, None
 
     def run(self, print_scores=False):
         self.print_scores = print_scores
@@ -73,7 +81,7 @@ class NestedCrossValidationEvaluator:
                 if isinstance(self.transform_range, slice):
                     self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
 
-                pipeline_out_transform = Pipeline([self.pipeline_out.steps[i] for i in self.transform_range])
+                pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
                 pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
                 best_param = self.grid_search(x_out_train_transformed, y_out_train)
@@ -97,7 +105,7 @@ class NestedCrossValidationEvaluator:
         self.y_true = np.concatenate(self.y_true)
 
     def run_use_fitted(self, print_scores=False, out_range=None):
-        self.pipeline_out = Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in out_range])
+        self.pipeline_out = base.clone(Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in out_range]))
         self.print_scores = print_scores
         cv_out_strategy = check_cv(self.cv_out)  # Ensure cv is a valid CV splitter
         self.best_params = []
@@ -116,7 +124,7 @@ class NestedCrossValidationEvaluator:
                 if isinstance(self.transform_range, slice):
                     self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
 
-                pipeline_out_transform = Pipeline([self.pipeline_out.steps[i] for i in self.transform_range])
+                pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
                 pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
                 best_param = self.grid_search(x_out_train_transformed, y_out_train)
@@ -141,10 +149,10 @@ class NestedCrossValidationEvaluator:
 
     def grid_search(self, x, y):
         search_params = self.search_params
-        pipeline = base.clone(self.pipeline_in)
+        my_pipeline = base.clone(self.pipeline_in)
         scores = []
         for i, search_param in enumerate(search_params):
-            pipeline_current = base.clone(pipeline)
+            pipeline_current = base.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in)
             CV.run()
