@@ -49,7 +49,7 @@ class CrossValidationEvaluator:
 
 class NestedCrossValidationEvaluator:
     def __init__(self, x, y, pipeline_out, pipeline_in, cv_out, cv_in, transform_by_out, transform_range, search_params,
-                 scoring="accuracy", **params):
+                 scoring="accuracy"):
         self.x = x
         self.y = y
         self.pipeline_out = pipeline_out
@@ -64,6 +64,8 @@ class NestedCrossValidationEvaluator:
         self.best_params = None
         self.pipeline_out_fitted = None
         self.y_prob, self.y_true, self.y_pred = None, None, None
+        if isinstance(self.transform_range, slice):
+            self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
 
     def run(self, print_scores=False):
         self.print_scores = print_scores
@@ -78,9 +80,6 @@ class NestedCrossValidationEvaluator:
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.transform_by_out:
-                if isinstance(self.transform_range, slice):
-                    self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
-
                 pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
                 pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
