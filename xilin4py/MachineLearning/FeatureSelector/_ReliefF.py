@@ -3,9 +3,8 @@ import numpy as np
 from skrebate import ReliefF
 
 class ExtendedReliefF(ReliefF):
-    def __init__(self, n_features_to_select=10, **kwargs):
+    def __init__(self, **kwargs):
         super(ExtendedReliefF, self).__init__(**kwargs)
-        self.n_features_to_select = n_features_to_select
         self.support_mask_ = None
 
     def fit(self, x, y):
