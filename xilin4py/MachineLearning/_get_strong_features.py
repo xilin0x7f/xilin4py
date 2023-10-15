@@ -41,7 +41,13 @@ def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name, endswi
         "freq": feature_selection_freq[feature_selection_freq > 0],
         "mean_coef": feature_coef_mean[feature_selection_freq > 0]
     })
+    feature_all_df = pd.DataFrame({
+        "feature": columns,
+        "freq": feature_selection_freq,
+        "mean_coef": feature_coef_mean
+    })
     feature_selection_df.to_excel(os.path.join(save_dir, f"FeatureSelected_{model_name}.xlsx"), index=False)
+    feature_all_df.to_excel(os.path.join(save_dir, f"FeatureAll_{model_name}.xlsx"), index=False)
     data_strong_feature = x[:, feature_selection_freq == 1]
     data_strong_feature = pd.DataFrame(data_strong_feature, columns=columns[feature_selection_freq == 1])
     data_strong_feature["label"] = y
