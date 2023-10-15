@@ -44,7 +44,7 @@ def f_score(x, y):
 
     scores = numerator / denominator
 
-    return scores, 1/np.array(scores)
+    return scores
 
 
 def compute_p_values(x, y):
