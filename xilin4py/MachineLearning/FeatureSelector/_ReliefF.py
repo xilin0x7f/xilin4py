@@ -1,11 +1,24 @@
 # Author: 赩林, xilin0x7f@163.com
 import numpy as np
 from skrebate import ReliefF
+from sklearn.base import BaseEstimator
 
 class ExtendedReliefF(ReliefF):
     def __init__(self, **kwargs):
         super(ExtendedReliefF, self).__init__(**kwargs)
         self.support_mask_ = None
+        self.kwargs = kwargs
+
+    def get_params(self, deep=True):
+        return self.kwargs
+
+    def set_params(self, **params):
+        self.kwargs.update(params)
+        for key, value in params.items():
+            setattr(self, key, value)
+
+        super(ExtendedReliefF, self).set_params(**self.kwargs)
+        return self
 
     def fit(self, x, y):
         super(ExtendedReliefF, self).fit(x, y)
