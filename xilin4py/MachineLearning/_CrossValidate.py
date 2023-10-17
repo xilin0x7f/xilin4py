@@ -88,7 +88,7 @@ class NestedCrossValidationEvaluator:
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.verbose:
                 print(f"Nested CV {i}th. "
-                      f"\nTrain shape {x_out_train.shape}, {y_out_train}."
+                      f"\nTrain shape {x_out_train.shape}, {y_out_train.shape}."
                       f"\nTest shape {x_out_test.shape}, {y_out_test.shape}")
             if self.transform_by_out:
                 pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
