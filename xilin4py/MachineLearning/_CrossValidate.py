@@ -21,7 +21,7 @@ class CrossValidationEvaluator:
         self.verbose = verbose
         self.save_pipeline = save_pipeline
 
-    def run(self, tqdm_position=2, tqdm_leave=False):
+    def run(self):
         self.train_index_ = []
         self.test_index_ = []
         self.y_true = []
@@ -30,9 +30,9 @@ class CrossValidationEvaluator:
             self.y_prob = []
 
         cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
-        for i, (train_index, test_index) in tqdm(enumerate(cv_strategy.split(self.x, self.y)),
-                                                 total=cv_strategy.get_n_splits(self.x),
-                                                 desc="CV", position=tqdm_position, leave=tqdm_leave):
+        for i, (train_index, test_index) in enumerate(cv_strategy.split(self.x, self.y)):
+            if self.verbose:
+                print(f'\rCV {i}th.')
             self.train_index_.append(train_index)
             self.test_index_.append(test_index)
             x_train, x_test = self.x[train_index], self.x[test_index]
@@ -83,13 +83,13 @@ class NestedCrossValidationEvaluator:
         self.y_true = []
         if hasattr(self.pipeline_out, "predict_proba"):
             self.y_prob = []
-        for i, (out_train_index, out_test_index) in tqdm(enumerate(cv_out_strategy.split(self.x, self.y)),
-                                                         total=cv_out_strategy.get_n_splits(self.x),
-                                                         desc="Nested CV", position=0):
+        for i, (out_train_index, out_test_index) in enumerate(cv_out_strategy.split(self.x, self.y)):
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             if self.verbose:
-                ...
+                print(f"Nested CV {i}th. "
+                      f"\nTrain shape {x_out_train.shape}, {y_out_train}."
+                      f"\nTest shape {x_out_test.shape}, {y_out_test.shape}")
             if self.transform_by_out:
                 pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
                 pipeline_out_transform.fit(x_out_train, y_out_train)
@@ -164,9 +164,9 @@ class NestedCrossValidationEvaluator:
         search_params = self.search_params
         my_pipeline = base.clone(self.pipeline_in)
         scores = []
-        for i, search_param in tqdm(enumerate(search_params), desc="Search parameter", position=1, leave=False):
+        for i, search_param in enumerate(search_params):
             if self.verbose:
-                ...
+                print(f"\r Search parameter: {search_param}")
             pipeline_current = base.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
@@ -185,6 +185,6 @@ class NestedCrossValidationEvaluator:
                     scores.append(metrics.roc_auc_score(y_true, y_prob[:, -1]))
 
         if self.print_scores:
-            tqdm.write(str(scores))
+            print(scores)
         best_param = search_params[int(np.argmax(scores))]
         return best_param
