@@ -1,10 +1,12 @@
 setuptools~=67.7.2
-numpy~=1.26.0
-pandas~=2.1.0
+numpy~=1.24.3
+pandas~=2.0.1
 pingouin~=0.5.3
 scikit-learn~=1.2.2
-scipy~=1.11.3
+scipy~=1.11.2
 xilin4py~=0.11
 joblib~=1.2.0
 skrebate~=0.62
-nibabel
+nibabel~=5.1.0
+sklearn~=0.0.post9
+tqdm

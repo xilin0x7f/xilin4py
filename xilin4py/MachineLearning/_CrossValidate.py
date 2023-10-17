@@ -5,6 +5,7 @@ from sklearn.model_selection import check_cv
 from sklearn import base
 from sklearn import metrics
 from sklearn.model_selection import ParameterGrid
+from tqdm import tqdm
 
 class CrossValidationEvaluator:
     def __init__(self, x, y, my_pipeline, cv, verbose=False):
@@ -28,9 +29,9 @@ class CrossValidationEvaluator:
             self.y_prob = []
 
         cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
-        for i, (train_index, test_index) in enumerate(cv_strategy.split(self.x, self.y)):
-            if self.verbose:
-                print(f"CV {i}th.")
+        for i, (train_index, test_index) in tqdm(enumerate(cv_strategy.split(self.x, self.y)),
+                                                 total=len(cv_strategy.split(self.x, self.y)),
+                                                 desc="CV"):
             self.train_index_.append(train_index)
             self.test_index_.append(test_index)
             x_train, x_test = self.x[train_index], self.x[test_index]
@@ -80,9 +81,12 @@ class NestedCrossValidationEvaluator:
         self.y_true = []
         if hasattr(self.pipeline_out, "predict_proba"):
             self.y_prob = []
-        for i, (out_train_index, out_test_index) in enumerate(cv_out_strategy.split(self.x, self.y)):
+        for i, (out_train_index, out_test_index) in tqdm(enumerate(cv_out_strategy.split(self.x, self.y)),
+                                                         total=len(cv_out_strategy.split(self.x, self.y)),
+                                                         desc="Nested CV"):
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
+            print("\n")
             if self.verbose:
                 print(f"Nested CV {i}th.")
                 print(f"X_train shape: {x_out_train.shape},"
@@ -114,7 +118,8 @@ class NestedCrossValidationEvaluator:
         self.y_true = np.concatenate(self.y_true)
 
     def run_use_fitted(self, print_scores=False, out_range=None):
-        self.pipeline_out = base.clone(Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in out_range]))
+        self.pipeline_out = base.clone(Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in
+                                                 out_range]))
         self.print_scores = print_scores
         cv_out_strategy = check_cv(self.cv_out)  # Ensure cv is a valid CV splitter
         self.best_params = []
@@ -162,9 +167,9 @@ class NestedCrossValidationEvaluator:
         search_params = self.search_params
         my_pipeline = base.clone(self.pipeline_in)
         scores = []
-        for i, search_param in enumerate(search_params):
+        for i, search_param in tqdm(enumerate(search_params), total=len(search_params)):
             if self.verbose:
-                print(f"Grid search parameter {search_param}.")
+                print(f"\nGrid search parameter {search_param}.")
             pipeline_current = base.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
