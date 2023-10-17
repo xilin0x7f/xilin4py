@@ -21,7 +21,7 @@ class CrossValidationEvaluator:
         self.verbose = verbose
         self.save_pipeline = save_pipeline
 
-    def run(self, tqdm_position=2, tqdm_leave=False):
+    def run(self, tqdm_position=0, tqdm_leave=False):
         self.train_index_ = []
         self.test_index_ = []
         self.y_true = []
@@ -169,7 +169,7 @@ class NestedCrossValidationEvaluator:
         search_params = self.search_params
         my_pipeline = base.clone(self.pipeline_in)
         scores = []
-        for i, search_param in tqdm(enumerate(search_params), desc="Search parameter", position=1, leave=False):
+        for i, search_param in tqdm(enumerate(search_params), desc="Search parameter", position=0, leave=False):
             if self.verbose:
                 print(f"\nGrid search parameter {search_param}.")
             pipeline_current = base.clone(my_pipeline)
