@@ -32,7 +32,7 @@ class CrossValidationEvaluator:
         cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
         for i, (train_index, test_index) in enumerate(cv_strategy.split(self.x, self.y)):
             if self.verbose:
-                print(f'\rCV {i}th.')
+                print(f'\rCV {i}th.', end="", flush=True)
             self.train_index_.append(train_index)
             self.test_index_.append(test_index)
             x_train, x_test = self.x[train_index], self.x[test_index]
@@ -166,7 +166,7 @@ class NestedCrossValidationEvaluator:
         scores = []
         for i, search_param in enumerate(search_params):
             if self.verbose:
-                print(f"\r Search parameter: {search_param}")
+                print(f"Search parameter: {search_param}")
             pipeline_current = base.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
