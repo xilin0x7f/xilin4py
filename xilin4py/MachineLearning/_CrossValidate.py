@@ -166,7 +166,7 @@ class NestedCrossValidationEvaluator:
         scores = []
         for i, search_param in enumerate(search_params):
             if self.verbose:
-                print(f"Search parameter: {search_param}")
+                print(f"\rSearch parameter: {search_param}")
             pipeline_current = base.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
