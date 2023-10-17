@@ -21,7 +21,7 @@ class CrossValidationEvaluator:
         self.verbose = verbose
         self.save_pipeline = save_pipeline
 
-    def run(self, tqdm_position=0, tqdm_leave=False):
+    def run(self, tqdm_position=2, tqdm_leave=False):
         self.train_index_ = []
         self.test_index_ = []
         self.y_true = []
@@ -88,13 +88,8 @@ class NestedCrossValidationEvaluator:
                                                          desc="Nested CV", position=0):
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
-            print("\n")
             if self.verbose:
-                print(f"Nested CV {i}th.")
-                print(f"X_train shape: {x_out_train.shape},"
-                      f"X_test shape: {x_out_test.shape},"
-                      f"y_train shape: {y_out_train.shape},"
-                      f"y_test shape: {y_out_test.shape}")
+                ...
             if self.transform_by_out:
                 pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
                 pipeline_out_transform.fit(x_out_train, y_out_train)
@@ -169,9 +164,9 @@ class NestedCrossValidationEvaluator:
         search_params = self.search_params
         my_pipeline = base.clone(self.pipeline_in)
         scores = []
-        for i, search_param in tqdm(enumerate(search_params), desc="Search parameter", position=0, leave=False):
+        for i, search_param in tqdm(enumerate(search_params), desc="Search parameter", position=1, leave=False):
             if self.verbose:
-                print(f"\nGrid search parameter {search_param}.")
+                ...
             pipeline_current = base.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
@@ -190,6 +185,6 @@ class NestedCrossValidationEvaluator:
                     scores.append(metrics.roc_auc_score(y_true, y_prob[:, -1]))
 
         if self.print_scores:
-            print(scores)
+            tqdm.write(str(scores))
         best_param = search_params[int(np.argmax(scores))]
         return best_param
