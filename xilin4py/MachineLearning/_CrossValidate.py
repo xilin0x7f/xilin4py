@@ -31,7 +31,7 @@ class CrossValidationEvaluator:
 
         cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
         for i, (train_index, test_index) in tqdm(enumerate(cv_strategy.split(self.x, self.y)),
-                                                 total=cv_strategy.get_n_splits(),
+                                                 total=cv_strategy.get_n_splits(self.x),
                                                  desc="CV", position=tqdm_position, leave=tqdm_leave):
             self.train_index_.append(train_index)
             self.test_index_.append(test_index)
@@ -84,7 +84,7 @@ class NestedCrossValidationEvaluator:
         if hasattr(self.pipeline_out, "predict_proba"):
             self.y_prob = []
         for i, (out_train_index, out_test_index) in tqdm(enumerate(cv_out_strategy.split(self.x, self.y)),
-                                                         total=cv_out_strategy.get_n_splits(),
+                                                         total=cv_out_strategy.get_n_splits(self.x),
                                                          desc="Nested CV", position=0):
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
