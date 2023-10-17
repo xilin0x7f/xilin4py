@@ -21,7 +21,7 @@ class CrossValidationEvaluator:
         self.verbose = verbose
         self.save_pipeline = save_pipeline
 
-    def run(self):
+    def run(self, tqdm_position=1, tqdm_leave=False):
         self.train_index_ = []
         self.test_index_ = []
         self.y_true = []
@@ -32,7 +32,7 @@ class CrossValidationEvaluator:
         cv_strategy = check_cv(self.cv)  # Ensure cv is a valid CV splitter
         for i, (train_index, test_index) in tqdm(enumerate(cv_strategy.split(self.x, self.y)),
                                                  total=cv_strategy.get_n_splits(),
-                                                 desc="CV"):
+                                                 desc="CV", position=tqdm_position, leave=tqdm_leave):
             self.train_index_.append(train_index)
             self.test_index_.append(test_index)
             x_train, x_test = self.x[train_index], self.x[test_index]
@@ -85,7 +85,7 @@ class NestedCrossValidationEvaluator:
             self.y_prob = []
         for i, (out_train_index, out_test_index) in tqdm(enumerate(cv_out_strategy.split(self.x, self.y)),
                                                          total=cv_out_strategy.get_n_splits(),
-                                                         desc="Nested CV"):
+                                                         desc="Nested CV", position=0):
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             print("\n")
