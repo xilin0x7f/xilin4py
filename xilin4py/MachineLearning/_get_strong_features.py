@@ -6,7 +6,8 @@ import pandas as pd
 
 def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name, endswith="_selector"):
     # get strong feature and data, then save
-
+    if not isinstance(columns, np.ndarray):
+        columns = np.array(columns)
     # 在使用单层的交叉验证时，使用的是pipeline_fitted, 因此进行copy到pipeline_out_fitted，使其和嵌套交叉验证一致
     if not hasattr(cv_evaluator, "pipeline_out_fitted"):
         setattr(cv_evaluator, "pipeline_out_fitted", cv_evaluator.pipeline_fitted)
