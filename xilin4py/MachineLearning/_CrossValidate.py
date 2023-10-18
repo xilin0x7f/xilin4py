@@ -185,6 +185,6 @@ class NestedCrossValidationEvaluator:
                     scores.append(metrics.roc_auc_score(y_true, y_prob[:, -1]))
 
         if self.print_scores:
-            print(scores)
+            print('\n', scores)
         best_param = search_params[int(np.argmax(scores))]
         return best_param
