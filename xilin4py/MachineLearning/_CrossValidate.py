@@ -47,6 +47,8 @@ class CrossValidationEvaluator:
             if hasattr(my_pipeline, "predict_proba"):
                 self.y_prob.append(my_pipeline.predict_proba(x_test))
 
+        if self.verbose:
+            print()
         if hasattr(self.my_pipeline, "predict_proba"):
             self.y_prob = np.vstack(self.y_prob)
         self.y_pred = np.concatenate(self.y_pred)
@@ -185,6 +187,6 @@ class NestedCrossValidationEvaluator:
                     scores.append(metrics.roc_auc_score(y_true, y_prob[:, -1]))
 
         if self.print_scores:
-            print('\n', scores)
+            print(scores)
         best_param = search_params[int(np.argmax(scores))]
         return best_param
