@@ -47,10 +47,12 @@ def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name, endswi
         "freq": feature_selection_freq,
         "mean_coef": feature_coef_mean
     })
-    feature_selection_df.to_excel(os.path.join(save_dir, f"FeatureSelected_{model_name}.xlsx"), index=False)
-    feature_all_df.to_excel(os.path.join(save_dir, f"FeatureAll_{model_name}.xlsx"), index=False)
+    feature_selection_df.to_csv(os.path.join(save_dir, f"FeatureSelected_{model_name}.csv"), index=False,
+                                encoding="UTF-8_sig")
+    feature_all_df.to_csv(os.path.join(save_dir, f"FeatureAll_{model_name}.csv"), index=False, encoding="UTF-8_sig")
     data_strong_feature = x[:, feature_selection_freq == 1]
     data_strong_feature = pd.DataFrame(data_strong_feature, columns=columns[feature_selection_freq == 1])
     data_strong_feature["label"] = y
-    data_strong_feature.to_excel(os.path.join(save_dir, f"DataStrongFeature_{model_name}.xlsx"), index=False)
+    data_strong_feature.to_csv(os.path.join(save_dir, f"DataStrongFeature_{model_name}.csv"), index=False,
+                               encoding="UTF-8_sig")
     return feature_selection_df
