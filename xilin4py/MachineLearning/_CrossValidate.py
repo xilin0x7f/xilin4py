@@ -58,10 +58,6 @@ class CrossValidationEvaluator:
 class NestedCrossValidationEvaluator:
     def __init__(self, x, y, pipeline_out, pipeline_in, cv_out, cv_in, transform_by_out, transform_range, search_params,
                  scoring="accuracy", verbose=False):
-        if smote:
-            x = scaler.fit_transform(x)
-            x, y = SMOTE(random_state=random_state).fit_resample(x, y)
-            x = scaler.inverse_transform(x)
         self.x = x
         self.y = y
         self.pipeline_out = pipeline_out
