@@ -5,7 +5,7 @@ from sklearn.model_selection import check_cv
 from sklearn import base
 from sklearn import metrics
 from sklearn.model_selection import ParameterGrid
-from tqdm import tqdm
+from imblearn.over_sampling import SMOTE
 
 class CrossValidationEvaluator:
     def __init__(self, x, y, my_pipeline, cv, save_pipeline=False, verbose=False):
