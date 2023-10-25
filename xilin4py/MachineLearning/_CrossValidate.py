@@ -57,7 +57,11 @@ class CrossValidationEvaluator:
 
 class NestedCrossValidationEvaluator:
     def __init__(self, x, y, pipeline_out, pipeline_in, cv_out, cv_in, transform_by_out, transform_range, search_params,
-                 scoring="accuracy", verbose=False):
+                 scoring="accuracy", verbose=False, ):
+        if smote:
+            x = scaler.fit_transform(x)
+            x, y = SMOTE(random_state=random_state).fit_resample(x, y)
+            x = scaler.inverse_transform(x)
         self.x = x
         self.y = y
         self.pipeline_out = pipeline_out
@@ -75,6 +79,14 @@ class NestedCrossValidationEvaluator:
         self.verbose = verbose
         if isinstance(self.transform_range, slice):
             self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
+
+    def smote_resample(self, scaler=None, random_state=0):
+        if scaler is not None:
+            self.x = scaler.fit_transform(self.x)
+
+        self.x, self.y = SMOTE(random_state=random_state).fit_resample(self.x, self.y)
+        if scaler is not None:
+            self.x = scaler.inverse_transform(self.x)
 
     def run(self, print_scores=False):
         self.print_scores = print_scores
