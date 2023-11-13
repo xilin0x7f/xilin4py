@@ -109,7 +109,7 @@ class NestedCrossValidationEvaluator:
                 best_param = self.grid_search(x_out_train, y_out_train)
 
             if self.verbose:
-                print(f'Best parm: {best_param}')
+                print(f'Best param: {best_param}')
 
             self.best_params.append(best_param)
 
