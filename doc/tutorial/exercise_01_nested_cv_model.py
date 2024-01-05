@@ -7,7 +7,8 @@ import itertools
 import imblearn
 import sys
 
-sys.path.insert(0, "C:/AppsData/PyCharm/xilin4py/xilin4py")
+# sys.path.insert(0, "C:/AppsData/PyCharm/xilin4py/xilin4py")
+sys.path.insert(0, "/Users/johnnash/PyCharmProjects/xilin4py")
 import numpy as np
 import pandas as pd
 # from sklearnex import patch_sklearn
@@ -42,8 +43,8 @@ if not os.path.exists(results_dir):
 transform_by_out, transform_range = True, [0, 1, 2]
 pipeline_out_pre_steps = [
     ("scaler", preprocessing.StandardScaler()),
-    ("fscore_selector", feature_selection.SelectKBest(f_score, k=10)),
-    ("smote", SMOTE(random_state=1))
+    ("smote", SMOTE(random_state=1)),
+    ("fscore_selector", feature_selection.SelectKBest(f_score, k=10))
 ]
 
 ml_params = [
@@ -66,6 +67,12 @@ combinations = itertools.product(ml_params, data_paths)
 for combination in combinations:
     ml_param, data_path = combination
     data = pd.read_csv(data_path)
+    samples_0 = data[data['target'] == 0].sample(100, random_state=0)
+    samples_1 = data[data['target'] == 1].sample(200, random_state=0)
+
+    # 合并样本
+    data = pd.concat([samples_0, samples_1])
+
     x = data.iloc[:, :-1]
     y = data.iloc[:, -1]
     columns = x.columns
