@@ -62,6 +62,7 @@ def updating_index(old_index_dict, deleted_index):
 
 class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
     def __init__(self, threshold_p_value=0.05, threshold_correlation=0.9):
+        # 首先计算p值，排除p值低于threshold_p_value的特征，然后递归地删除相关性较高的特征，相关性很高时删除p值较高的特征
         self.threshold_p_value = threshold_p_value
         self.threshold_correlation = threshold_correlation
         self.selected_columns_ = None
@@ -76,7 +77,13 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
         index_mapping = updating_index(index_mapping, deleted_columns)
         x_selected = np.delete(x, deleted_columns, axis=1)
         while True:
+            # 如果特征数量已经低于correlation的阈值，则退出
+            # 此步用于根据相关性筛选时以保留的特征数量为依据，而非相关性为依据
+            if x_selected.shape[1] <= self.threshold_correlation:
+                break
+
             correlation_matrix = np.corrcoef(x_selected, rowvar=False)
+
             if not isinstance(correlation_matrix, np.ndarray):
                 break
 
