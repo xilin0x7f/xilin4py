@@ -1,8 +1,8 @@
 # Author: 赩林, xilin0x7f@163.com
+import imblearn
 import numpy as np
-from sklearn.pipeline import Pipeline
+from imblearn.pipeline import Pipeline
 from sklearn.model_selection import check_cv
-from sklearn import base
 from sklearn import metrics
 from sklearn.model_selection import ParameterGrid
 from imblearn.over_sampling import SMOTE
@@ -37,7 +37,7 @@ class CrossValidationEvaluator:
             self.test_index_.append(test_index)
             x_train, x_test = self.x[train_index], self.x[test_index]
             y_train, y_test = self.y[train_index], self.y[test_index]
-            my_pipeline = base.clone(self.my_pipeline)
+            my_pipeline = imblearn.pipeline.clone(self.my_pipeline)
             my_pipeline.fit(x_train, y_train)
             if self.save_pipeline:
                 self.pipeline_fitted.append(my_pipeline)
@@ -101,10 +101,22 @@ class NestedCrossValidationEvaluator:
                       f"\nTrain shape {x_out_train.shape}, {y_out_train.shape}."
                       f"\nTest shape {x_out_test.shape}, {y_out_test.shape}")
             if self.transform_by_out:
-                pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
-                pipeline_out_transform.fit(x_out_train, y_out_train)
-                x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
-                best_param = self.grid_search(x_out_train_transformed, y_out_train)
+                pipeline_out_transform = imblearn.pipeline.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
+                # pipeline_out_transform.fit(x_out_train, y_out_train)
+                try:
+                    x_out_train_transformed, y_out_train_transformed = pipeline_out_transform.fit_resample(x_out_train, y_out_train)
+                except TypeError:
+                    x_out_train_transformed = pipeline_out_transform.fit_transform(x_out_train, y_out_train)
+                    has_smote = False
+                    for idx in range(1, len(pipeline_out_transform) + 1):
+                        if isinstance(pipeline_out_transform[-1 * idx], SMOTE):
+                            tmp, y_out_train_transformed = pipeline_out_transform[:-1*idx+1].fit_resample(x_out_train, y_out_train)
+                            has_smote = True
+                            break
+                    if not has_smote:
+                        y_out_train_transformed = y_out_train
+
+                best_param = self.grid_search(x_out_train_transformed, y_out_train_transformed)
             else:
                 best_param = self.grid_search(x_out_train, y_out_train)
 
@@ -113,7 +125,7 @@ class NestedCrossValidationEvaluator:
 
             self.best_params.append(best_param)
 
-            pipeline_out = base.clone(self.pipeline_out)
+            pipeline_out = imblearn.pipeline.clone(self.pipeline_out)
             pipeline_out.set_params(**best_param)
             pipeline_out.fit(x_out_train, y_out_train)
             self.pipeline_out_fitted.append(pipeline_out)
@@ -129,7 +141,7 @@ class NestedCrossValidationEvaluator:
         self.y_true = np.concatenate(self.y_true)
 
     def run_use_fitted(self, print_scores=False, out_range=None):
-        self.pipeline_out = base.clone(Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in
+        self.pipeline_out = imblearn.pipeline.clone(Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in
                                                  out_range]))
         self.print_scores = print_scores
         cv_out_strategy = check_cv(self.cv_out)  # Ensure cv is a valid CV splitter
@@ -151,7 +163,7 @@ class NestedCrossValidationEvaluator:
                 if isinstance(self.transform_range, slice):
                     self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
 
-                pipeline_out_transform = base.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
+                pipeline_out_transform = imblearn.pipeline.clone(Pipeline([self.pipeline_out.steps[i] for i in self.transform_range]))
                 pipeline_out_transform.fit(x_out_train, y_out_train)
                 x_out_train_transformed = pipeline_out_transform.transform(x_out_train)
                 best_param = self.grid_search(x_out_train_transformed, y_out_train)
@@ -159,7 +171,7 @@ class NestedCrossValidationEvaluator:
                 best_param = self.grid_search(x_out_train, y_out_train)
             self.best_params.append(best_param)
 
-            pipeline_out = base.clone(self.pipeline_out)
+            pipeline_out = imblearn.pipeline.clone(self.pipeline_out)
             pipeline_out.set_params(**best_param)
             pipeline_out.fit(x_out_train, y_out_train)
             # self.pipeline_out_fitted.append(Pipeline(fitted_pipeline_for_transform.steps + self.pipeline_out.steps))
@@ -176,12 +188,12 @@ class NestedCrossValidationEvaluator:
 
     def grid_search(self, x, y):
         search_params = self.search_params
-        my_pipeline = base.clone(self.pipeline_in)
+        my_pipeline = imblearn.pipeline.clone(self.pipeline_in)
         scores = []
         for i, search_param in enumerate(search_params):
             if self.verbose:
                 print(f"\rSearch parameter: {search_param}")
-            pipeline_current = base.clone(my_pipeline)
+            pipeline_current = imblearn.pipeline.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
             CV.run()
