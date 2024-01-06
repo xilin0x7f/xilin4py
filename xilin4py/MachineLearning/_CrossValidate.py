@@ -3,7 +3,6 @@ import imblearn
 import numpy as np
 from imblearn.pipeline import Pipeline
 from sklearn.model_selection import check_cv
-from sklearn import base
 from sklearn import metrics
 from sklearn.model_selection import ParameterGrid
 from imblearn.over_sampling import SMOTE
