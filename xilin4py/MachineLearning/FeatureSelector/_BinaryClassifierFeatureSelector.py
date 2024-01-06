@@ -88,7 +88,7 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
                 break
 
             correlation_matrix[np.tril_indices_from(correlation_matrix)] = 0
-            if np.max(np.abs(correlation_matrix)) < self.threshold_correlation:
+            if np.max(np.abs(correlation_matrix)) < self.threshold_correlation <= 1:
                 break
 
             row, col = np.unravel_index(np.argmax(np.abs(correlation_matrix)), correlation_matrix.shape)
