@@ -105,7 +105,7 @@ class NestedCrossValidationEvaluator:
                 # pipeline_out_transform.fit(x_out_train, y_out_train)
                 try:
                     x_out_train_transformed, y_out_train_transformed = pipeline_out_transform.fit_resample(x_out_train, y_out_train)
-                except TypeError:
+                except:
                     x_out_train_transformed = pipeline_out_transform.fit_transform(x_out_train, y_out_train)
                     has_smote = False
                     for idx in range(1, len(pipeline_out_transform) + 1):
