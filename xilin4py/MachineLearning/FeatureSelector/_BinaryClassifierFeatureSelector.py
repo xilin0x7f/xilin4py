@@ -186,6 +186,34 @@ class FeatureSelectorICC(BaseEstimator, TransformerMixin):
         return support_mask
 
 
+class TtestFeatureSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, threshold):
+        self.threshold = threshold
+        self.selected_columns_ = None
+        self.support_mask_ = None
+        self.n_features_in_ = None
+
+    def fit(self, x, y):
+        self.n_features_in_ = x.shape[1]
+        t_values, p_values = ttest_ind(x[y == 1], x[y == 0], axis=0)
+        # 选择 p 值低于阈值的特征
+        self.selected_columns_ = np.where(p_values < self.threshold)[0]
+        self.support_mask_ = self._get_support_mask()
+        return self
+
+    def transform(self, x, y=None):
+        return x[:, self.selected_columns_]
+
+    def get_support(self):
+        check_is_fitted(self)
+        return copy.deepcopy(self.support_mask_)
+
+    def _get_support_mask(self):
+        support_mask = np.zeros(self.n_features_in_, dtype=bool)
+        support_mask[self.selected_columns_] = True
+        return support_mask
+
+
 if __name__ == "__main__":
     import numpy as np
     from sklearn.datasets import make_classification
