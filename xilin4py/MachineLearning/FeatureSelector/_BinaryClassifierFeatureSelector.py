@@ -48,6 +48,10 @@ def compute_p_values(x, y):
 
     return p_values
 
+def ttest_scores(x, y):
+    t_values, p_values = ttest_ind(x[y == 1], x[y == 0], axis=0)
+    return 1/p_values, p_values
+
 def updating_index(old_index_dict, deleted_index):
     deleted_index = np.sort(deleted_index)
     if isinstance(deleted_index, np.ndarray):
