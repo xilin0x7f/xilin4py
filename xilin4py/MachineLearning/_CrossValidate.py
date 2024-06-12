@@ -47,8 +47,6 @@ class CrossValidationEvaluator:
             if hasattr(my_pipeline, "predict_proba"):
                 self.y_prob.append(my_pipeline.predict_proba(x_test))
 
-        if self.verbose:
-            print()
         if hasattr(self.my_pipeline, "predict_proba"):
             self.y_prob = np.vstack(self.y_prob)
         self.y_pred = np.concatenate(self.y_pred)
