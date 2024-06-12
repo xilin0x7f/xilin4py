@@ -2,7 +2,7 @@
 import imblearn
 import numpy as np
 from imblearn.pipeline import Pipeline
-from sklearn.model_selection import check_cv
+from sklearn.model_selection import check_cv, GridSearchCV
 from sklearn import metrics
 from sklearn.model_selection import ParameterGrid
 from imblearn.over_sampling import SMOTE
@@ -55,7 +55,7 @@ class CrossValidationEvaluator:
 
 class NestedCrossValidationEvaluator:
     def __init__(self, x, y, pipeline_out, pipeline_in, cv_out, cv_in, transform_by_out, transform_range, search_params,
-                 scoring="accuracy", verbose=False):
+                 scoring="accuracy", verbose=False, mean_scoring=False):
         self.x = x
         self.y = y
         self.pipeline_out = pipeline_out
@@ -64,13 +64,14 @@ class NestedCrossValidationEvaluator:
         self.cv_in = cv_in
         self.transform_by_out = transform_by_out
         self.transform_range = transform_range
-        self.search_params = ParameterGrid(search_params)
+        self.search_params = search_params
         self.scoring = scoring
         self.print_scores = None
         self.best_params = None
         self.pipeline_out_fitted = None
         self.y_prob, self.y_true, self.y_pred = None, None, None
         self.verbose = verbose
+        self.mean_scoring = mean_scoring
         if isinstance(self.transform_range, slice):
             self.transform_range = list(range(*self.transform_range.indices(self.transform_range.stop)))
 
@@ -187,7 +188,14 @@ class NestedCrossValidationEvaluator:
     def grid_search(self, x, y):
         search_params = self.search_params
         my_pipeline = imblearn.pipeline.clone(self.pipeline_in)
+
+        if self.mean_scoring:
+            clf = GridSearchCV(my_pipeline, search_params, scoring=self.scoring, cv=self.cv_in)
+            clf.fit(x, y)
+            return clf.best_params_
+
         scores = []
+        search_params = ParameterGrid(search_params)
         for i, search_param in enumerate(search_params):
             if self.verbose:
                 print(f"\rSearch parameter: {search_param}", end="")
