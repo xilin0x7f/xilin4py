@@ -1,4 +1,4 @@
-# Author: 赩林, xilin0x7f@163.com
+﻿# Author: 赩林, xilin0x7f@163.com
 import imblearn
 import numpy as np
 from imblearn.pipeline import Pipeline
@@ -153,7 +153,7 @@ class NestedCrossValidationEvaluator:
             self.y_prob = []
         for i, (out_train_index, out_test_index) in enumerate(cv_out_strategy.split(self.x, self.y)):
             if self.verbose:
-                print(f"Nested CV {i}th.")
+                print(f"\rNested CV {i}th.", end="")
             x_out_train, x_out_test = self.x[out_train_index], self.x[out_test_index]
             y_out_train, y_out_test = self.y[out_train_index], self.y[out_test_index]
             fitted_pipeline_for_transform = Pipeline([self.pipeline_out_fitted[i].steps[j] for j in out_range])
@@ -192,7 +192,7 @@ class NestedCrossValidationEvaluator:
         scores = []
         for i, search_param in enumerate(search_params):
             if self.verbose:
-                print(f"\rSearch parameter: {search_param}")
+                print(f"\rSearch parameter: {search_param}", end="")
             pipeline_current = imblearn.pipeline.clone(my_pipeline)
             pipeline_current.set_params(**search_param)
             CV = CrossValidationEvaluator(x, y, pipeline_current, self.cv_in, verbose=self.verbose)
@@ -209,6 +209,8 @@ class NestedCrossValidationEvaluator:
                     scores.append(metrics.accuracy_score(y_true, y_pred))
                 elif self.scoring == "auc":
                     scores.append(metrics.roc_auc_score(y_true, y_prob[:, -1]))
+
+        print() if self.verbose else None
 
         if self.print_scores:
             print(scores)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/xilin4py/MachineLearning/FeatureSelector/_ReliefF.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xilin4py/MachineLearning/_CrossValidate.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/xilin4py/Tools/_get_value_by_nifti.py" charset="UTF-8" />
+    <file url="mock:///Dummy.txt" charset="UTF-8" />
+  </component>
+</project>

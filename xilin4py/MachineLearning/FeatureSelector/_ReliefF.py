@@ -1,4 +1,4 @@
-# Author: 赩林, xilin0x7f@163.com
+﻿# Author: 赩林, xilin0x7f@163.com
 import numpy as np
 from skrebate import ReliefF
 from sklearn.base import BaseEstimator
