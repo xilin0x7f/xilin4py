@@ -41,7 +41,7 @@ def cifti_separate(cifti_file):
 
     return cortex_left_data, cortex_right_data, cortex_left_indices, cortex_right_indices, volume_data, volume_mat
 
-def cifti_surface_zscore(cifti_file, mask_left=None, mask_right=None):
+def cifti_surface_zscore(cifti_file, mask_left=None, mask_right=None, weight_lh=None, weight_rh=None):
     cortex_left_data, cortex_right_data, cortex_left_indices, cortex_right_indices = cifti_separate(cifti_file)[:4]
     if mask_left is None:
         mask_left = np.zeros(cortex_left_data.shape[1])
@@ -55,7 +55,14 @@ def cifti_surface_zscore(cifti_file, mask_left=None, mask_right=None):
     cortex_all = np.hstack([cortex_left_data, cortex_right_data])
     mask_all = np.hstack([mask_left, mask_right])
     cortex_masked = cortex_all[:, mask_all > 0]
-    cortex_masked_zscore = (cortex_masked - np.nanmean(cortex_masked, axis=1)[:, np.newaxis]) / np.nanstd(cortex_masked, axis=1)[:, np.newaxis]
+    if weight_lh is not None and weight_rh is not None:
+        weight_all = np.hstack([weight_lh, weight_rh])
+        weight_masked = weight_all[:, mask_all > 0]
+        mean_value = np.average(cortex_masked, weights=weight_masked, axis=1)[:, np.newaxis]
+        std_value = np.sqrt(np.average((cortex_masked-mean_value)**2, weights=weight_masked, axis=1))[:, np.newaxis]
+        cortex_masked_zscore = (cortex_masked - mean_value) / std_value
+    else:
+        cortex_masked_zscore = (cortex_masked - np.nanmean(cortex_masked, axis=1)[:, np.newaxis]) / np.nanstd(cortex_masked, axis=1)[:, np.newaxis]
 
     # cortex_all_zscore = cortex_all * 0
     # cortex_all_zscore[:, mask_all > 0] = cortex_masked_zscore
