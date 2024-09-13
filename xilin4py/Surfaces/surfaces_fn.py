@@ -3,12 +3,14 @@ import numpy as np
 import nibabel as nib
 
 def compute_surface_area(vertices, faces):
-    vertex_areas = np.zeros(vertices.shape[0])
-    for face in faces:
-        v0, v1, v2 = vertices[face[0]], vertices[face[1]], vertices[face[2]]
-        vertex_areas[face] += np.linalg.norm(np.cross(v1 - v0, v2 - v0)) / 6.0
+    vectors = np.diff(vertices[faces], axis=1)
+    cross = np.cross(vectors[:, 0], vectors[:, 1])
+    areas = np.bincount(
+        faces.flatten(),
+        weights=np.repeat(np.sqrt(np.sum(cross ** 2, axis=1)) / 6, 3)
+    )
 
-    return vertex_areas
+    return areas
 
 def cifti_separate(cifti_file):
     cifti_data = cifti_file.get_fdata()
