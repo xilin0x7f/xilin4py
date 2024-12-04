@@ -209,7 +209,7 @@ class NestedCrossValidationEvaluator:
             if hasattr(CV, "y_prob"):
                 y_prob = CV.y_prob
             if callable(self.scoring):
-                scores.append(self.scoring(y_true, y_pred, y_prob=None))
+                scores.append(self.scoring(y_true, y_pred))
             elif isinstance(self.scoring, str):
                 if self.scoring == "accuracy":
                     scores.append(metrics.accuracy_score(y_true, y_pred))
