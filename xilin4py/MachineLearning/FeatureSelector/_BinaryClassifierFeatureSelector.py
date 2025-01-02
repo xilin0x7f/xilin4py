@@ -122,19 +122,17 @@ class RecursivePCorrFeatureSelector(BaseEstimator, TransformerMixin):
 
 
 class LassoFeatureSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, cv=5, Cs=10, random_state=None):
-        self.cv = cv
-        self.Cs = Cs  # Cs describes the inverse of regularization strength
-        self.random_state = random_state
+    def __init__(self, lasso_kwargs=None):
         self.log_reg = None
         self.selected_columns_ = None
         self.support_mask_ = None
         self.n_features_in_ = None
+        self.lasso_kwargs = lasso_kwargs if lasso_kwargs is not None else {}
+        self.lasso_kwargs['penalty'] = 'l1'
 
     def fit(self, x, y):
         self.n_features_in_ = x.shape[1]
-        self.log_reg = LogisticRegressionCV(
-            cv=self.cv, penalty='l1', solver='liblinear', Cs=self.Cs, random_state=self.random_state)
+        self.log_reg = LogisticRegressionCV(**self.lasso_kwargs)
         self.log_reg.fit(x, y)
         self.selected_columns_ = np.nonzero(self.log_reg.coef_[0])[0]
         self.support_mask_ = self._get_support_mask()
