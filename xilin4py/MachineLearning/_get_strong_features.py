@@ -24,21 +24,37 @@ def get_strong_feature(cv_evaluator, columns, x, y, save_dir, model_name, endswi
         feature_mask = None
         for idx, step in enumerate(selected_steps):
             if idx == 0:
-                feature_mask = copy.deepcopy(step.get_support())
+                if hasattr(step, 'get_support'):
+                    feature_mask = copy.deepcopy(step.get_support())
+                elif hasattr(step, "coef_"):
+                    feature_mask = step.coef_ !=0
+                else:
+                    raise ValueError(f"step: {step} has no get_support or coef_ attribute")
             else:
-                feature_mask[feature_mask] = feature_mask[feature_mask] & step.get_support()
+                if hasattr(step, 'get_support'):
+                    feature_mask[feature_mask] = feature_mask[feature_mask] & step.get_support()
+                elif hasattr(step, "coef_"):
+                    feature_mask[feature_mask] = feature_mask[feature_mask] & (step.coef_ !=0)
+                else:
+                    raise ValueError(f"step: {step} has no get_support or coef_ attribute")
 
         feature_selection_counts += feature_mask.astype(int)
 
         if hasattr(fitted_pipeline[-1], 'coef_'):
             full_coef = np.zeros(len(feature_mask))
-            full_coef[feature_mask] = fitted_pipeline[-1].coef_.flatten()
-            feature_coef_sum += full_coef
+            if np.sum(feature_mask) != 0:
+                try: ## 针对LASSO模型做了适配，根据 coef_ != 0 获取 support mask , 然后把非 0 的系数放到要保存的表格里面
+                    full_coef[feature_mask] = fitted_pipeline[-1].coef_.flatten()
+                except ValueError:
+                    full_coef[feature_mask] = fitted_pipeline[-1].coef_.flatten()[fitted_pipeline[-1].coef_.flatten() != 0]
+
+                feature_coef_sum += full_coef
 
         if hasattr(fitted_pipeline[-1], 'feature_importances_'):
             full_coef = np.zeros(len(feature_mask))
-            full_coef[feature_mask] = fitted_pipeline[-1].feature_importances_.flatten()
-            feature_coef_sum += full_coef
+            if np.sum(feature_mask) != 0:
+                full_coef[feature_mask] = fitted_pipeline[-1].feature_importances_.flatten()
+                feature_coef_sum += full_coef
 
     feature_selection_freq = feature_selection_counts / len(dest_pipelines)
     feature_coef_mean = feature_coef_sum / len(dest_pipelines)
