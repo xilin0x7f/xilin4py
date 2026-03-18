@@ -140,6 +140,9 @@ class NestedCrossValidationEvaluator:
         self.y_true = np.concatenate(self.y_true)
 
     def run_use_fitted(self, print_scores=False, out_range=None):
+        ## 先把 pipe_out 中 out_range 的 step 应用于 数据, 之后的 pipe_out 不包含 out_range 内的 step, 
+        ## 如果原先只有 scaler, model, 则在 run_use_fitted 的 scaler 之后, pipe_out 只有 model, 
+        # 因此需要把 self.transform_by_out = False
         self.pipeline_out = imblearn.pipeline.clone(Pipeline([step for i, step in enumerate(self.pipeline_out.steps) if i not in
                                                  out_range]))
         self.print_scores = print_scores
